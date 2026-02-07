@@ -9,6 +9,7 @@ type Product = {
   description: string | null;
   price: number | null;
   created_at: string;
+  created_by: string | number | null;
 };
 
 export function ProductsCrud() {
@@ -20,6 +21,8 @@ export function ProductsCrud() {
   const [formDescription, setFormDescription] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [addFormOpen, setAddFormOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   async function fetchProducts() {
     setLoading(true);
@@ -40,11 +43,19 @@ export function ProductsCrud() {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCurrentUserId(data?.user?.sub ?? null))
+      .catch(() => setCurrentUserId(null));
+  }, []);
+
   function resetForm() {
     setEditingId(null);
     setFormName("");
     setFormDescription("");
     setFormPrice("");
+    setAddFormOpen(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -114,6 +125,7 @@ export function ProductsCrud() {
     setFormName(p.name);
     setFormDescription(p.description ?? "");
     setFormPrice(p.price != null ? String(p.price) : "");
+    setAddFormOpen(true);
   }
 
   if (loading) return <p>Loading products…</p>;
@@ -121,49 +133,68 @@ export function ProductsCrud() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className={styles.form} style={{ marginBottom: 24 }}>
-        <input type="hidden" value={editingId ?? ""} readOnly />
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          Name
-          <input
-            type="text"
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            required
-            placeholder="Product name"
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          Description
-          <input
-            type="text"
-            value={formDescription}
-            onChange={(e) => setFormDescription(e.target.value)}
-            placeholder="Optional description"
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          Price
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={formPrice}
-            onChange={(e) => setFormPrice(e.target.value)}
-            placeholder="Optional price"
-          />
-        </label>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={submitting}>
-            {editingId ? "Update" : "Add"} product
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm}>
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+      <div style={{ marginBottom: 24 }}>
+        <button
+          type="button"
+          onClick={() => setAddFormOpen((open) => !open)}
+          style={{
+            padding: "12px 20px",
+            background: "var(--foreground)",
+            color: "var(--background)",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontWeight: 500,
+          }}
+        >
+          Add product {addFormOpen ? "▲" : "▼"}
+        </button>
+        {addFormOpen && (
+          <form onSubmit={handleSubmit} className={styles.form} style={{ marginTop: 16 }}>
+            <input type="hidden" value={editingId ?? ""} readOnly />
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              Name
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                required
+                placeholder="Product name"
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              Description
+              <input
+                type="text"
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                placeholder="Optional description"
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              Price
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formPrice}
+                onChange={(e) => setFormPrice(e.target.value)}
+                placeholder="Optional price"
+              />
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="submit" disabled={submitting}>
+                {editingId ? "Update" : "Add"} product
+              </button>
+              {editingId && (
+                <button type="button" onClick={resetForm}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+      </div>
 
       <section>
         <h2 style={{ fontSize: 18, marginBottom: 12 }}>All products</h2>
@@ -188,12 +219,18 @@ export function ProductsCrud() {
                   {p.price != null && ` · $${Number(p.price).toFixed(2)}`}
                 </span>
                 <span style={{ display: "flex", gap: 8 }}>
-                  <button type="button" onClick={() => startEdit(p)}>
-                    Edit
-                  </button>
-                  <button type="button" onClick={() => handleDelete(p.id)}>
-                    Delete
-                  </button>
+                  {currentUserId != null &&
+                    p.created_by != null &&
+                    String(p.created_by) === currentUserId && (
+                      <>
+                        <button type="button" onClick={() => startEdit(p)}>
+                          Edit
+                        </button>
+                        <button type="button" onClick={() => handleDelete(p.id)}>
+                          Delete
+                        </button>
+                      </>
+                    )}
                 </span>
               </li>
             ))

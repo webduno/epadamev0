@@ -17,7 +17,7 @@ export async function GET(
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const { data, error } = await supabase
     .from("product")
-    .select("id, name, description, price, created_at, updated_at")
+    .select("id, name, description, price, created_at, updated_at, created_by")
     .eq("id", id)
     .single();
 
@@ -63,6 +63,24 @@ export async function PUT(
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: product, error: fetchError } = await supabase
+    .from("product")
+    .select("created_by")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !product) {
+    if (fetchError?.code === "PGRST116") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: fetchError?.message ?? "Not found" }, { status: 500 });
+  }
+
+  const ownerId = product.created_by != null ? String(product.created_by) : null;
+  if (ownerId !== String(user.sub)) {
+    return NextResponse.json({ error: "Forbidden: only the owner can edit this product" }, { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from("product")
     .update(updates)
@@ -94,6 +112,24 @@ export async function DELETE(
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: product, error: fetchError } = await supabase
+    .from("product")
+    .select("created_by")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !product) {
+    if (fetchError?.code === "PGRST116") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return NextResponse.json({ error: fetchError?.message ?? "Not found" }, { status: 500 });
+  }
+
+  const ownerId = product.created_by != null ? String(product.created_by) : null;
+  if (ownerId !== String(user.sub)) {
+    return NextResponse.json({ error: "Forbidden: only the owner can delete this product" }, { status: 403 });
+  }
+
   const { error } = await supabase.from("product").delete().eq("id", id);
 
   if (error) {

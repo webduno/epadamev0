@@ -8,13 +8,28 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") ?? "50", 10), 1), 100);
+  const q = searchParams.get("q") ?? "";
+  const sort = (searchParams.get("sort") ?? "newest") as "newest" | "price_asc" | "price_desc";
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  const { data, error } = await supabase
+  let query = supabase
     .from("product")
-    .select("id, name, description, price, created_at")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .select("id, name, description, price, created_at, created_by");
+
+  const term = q.trim();
+  if (term) {
+    query = query.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
+  }
+
+  if (sort === "price_asc") {
+    query = query.order("price", { ascending: true, nullsFirst: false });
+  } else if (sort === "price_desc") {
+    query = query.order("price", { ascending: false, nullsFirst: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query.limit(limit);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

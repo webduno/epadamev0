@@ -4,6 +4,7 @@ import { UsersCount } from "./components/UsersCount";
 import { getAuthUser } from "@/lib/auth";
 import { LogoutButton } from "./components/LogoutButton";
 import { getLatestProducts } from "@/lib/products";
+import { LandingSearch } from "./components/LandingSearch";
 
 export default async function Home() {
   const [user, latestProducts] = await Promise.all([
@@ -14,6 +15,7 @@ export default async function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
+        <LandingSearch />
         {user ? (
           <>
             <p>

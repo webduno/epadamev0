@@ -1,6 +1,11 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret-change-in-production";
+const DEV_SECRET = "dev-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET ?? DEV_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEV_SECRET)) {
+  throw new Error("JWT_SECRET must be set to a strong random value in production");
+}
 const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
 
 function base64UrlEncode(input: Buffer | string): string {
@@ -39,7 +44,13 @@ export function verifyJwt(token: string): { sub: string; email: string } | null 
   const expectedSig = createHmac("sha256", JWT_SECRET).update(signingInput).digest();
   const receivedSig = base64UrlDecode(signatureB64);
   if (expectedSig.length !== receivedSig.length || !timingSafeEqual(expectedSig, receivedSig)) return null;
-  const payload = JSON.parse(base64UrlDecode(payloadB64).toString()) as { sub: string; email: string; exp?: number };
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+  let payload: { sub: string; email: string; exp?: number };
+  try {
+    payload = JSON.parse(base64UrlDecode(payloadB64).toString()) as { sub: string; email: string; exp?: number };
+  } catch {
+    return null;
+  }
+  if (payload.exp != null && payload.exp < Math.floor(Date.now() / 1000)) return null;
+  if (typeof payload.sub !== "string" || typeof payload.email !== "string") return null;
   return { sub: payload.sub, email: payload.email };
 }
