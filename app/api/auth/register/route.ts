@@ -26,9 +26,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const passwordHash = hashPassword(passwordStr);
-
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: existing } = await supabase.from("epa_user").select("id").eq("email", emailStr).limit(1);
+  if (existing?.length) {
+    return NextResponse.json(
+      { error: "An account with this email already exists" },
+      { status: 409 }
+    );
+  }
+
+  const passwordHash = hashPassword(passwordStr);
   const { error } = await supabase.from("epa_user").insert({
     email: emailStr,
     password_hash: passwordHash,

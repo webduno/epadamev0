@@ -3,9 +3,13 @@ import styles from "./page.module.css";
 import { UsersCount } from "./components/UsersCount";
 import { getAuthUser } from "@/lib/auth";
 import { LogoutButton } from "./components/LogoutButton";
+import { getLatestProducts } from "@/lib/products";
 
 export default async function Home() {
-  const user = await getAuthUser();
+  const [user, latestProducts] = await Promise.all([
+    getAuthUser(),
+    getLatestProducts(5),
+  ]);
 
   return (
     <div className={styles.page}>
@@ -16,6 +20,9 @@ export default async function Home() {
               Users: <UsersCount />
             </p>
             <div className={styles.ctas}>
+              <Link href="/products" className={styles.primary}>
+                Manage products
+              </Link>
               <LogoutButton />
             </div>
           </>
@@ -29,6 +36,23 @@ export default async function Home() {
             </Link>
           </div>
         )}
+
+        <section className={styles.productsSection}>
+          <h2 className={styles.productsTitle}>Latest products</h2>
+          {latestProducts.length === 0 ? (
+            <p className={styles.productsEmpty}>No products yet.</p>
+          ) : (
+            <ul className={styles.productsList}>
+              {latestProducts.map((p) => (
+                <li key={p.id}>
+                  <strong>{p.name}</strong>
+                  {p.description && ` — ${p.description}`}
+                  {p.price != null && ` · $${Number(p.price).toFixed(2)}`}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
