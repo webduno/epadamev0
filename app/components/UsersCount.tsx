@@ -7,7 +7,7 @@ export function UsersCount() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/users/count")
+    fetch("/api/users/count", { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();

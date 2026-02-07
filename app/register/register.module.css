@@ -1,0 +1,88 @@
+.page {
+  --gray-rgb: 0, 0, 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 24px;
+  font-family: var(--font-geist-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --gray-rgb: 255, 255, 255;
+  }
+}
+
+.main {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.main h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form input {
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--gray-rgb, 0, 0, 0), 0.2);
+  border-radius: 8px;
+  font-size: 16px;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.form input:focus {
+  outline: none;
+  border-color: var(--foreground);
+}
+
+.form button {
+  padding: 12px;
+  background: var(--foreground);
+  color: var(--background);
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.form button:hover {
+  opacity: 0.9;
+}
+
+.error {
+  color: #c53030;
+  font-size: 14px;
+  margin: 0;
+}
+
+.link {
+  font-size: 14px;
+  color: inherit;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
